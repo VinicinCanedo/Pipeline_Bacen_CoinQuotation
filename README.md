@@ -51,38 +51,27 @@ A solução automatiza o processo de obtenção de cotações cambiais e torna o
 
 ---
 
-## 🧪 Como Executar
+## 🐳 Como Executar com Docker
 
-1. Clone o repositório:
-    
+1. **Construa a imagem Docker:**
+
     ```bash
-    git clone https://github.com/VinicinCaendo/Pipeline_Bacen_Cotation.git
-    cd pipeline-cotacoes-bacen
-    
+    docker build -t pipeline-bacen .
     ```
-    
-2. Instale as dependências:
-    
+
+2. **Crie um arquivo `.env` com suas credenciais do Supabase e chave da API (caso necessário) na raiz do projeto.**
+
+3. **Execute o pipeline ETL:**
+
     ```bash
-    pip install -r requirements.txt
-    
+    docker run --env-file .env pipeline-bacen
     ```
-    
-3. Crie um arquivo `.env` com suas credenciais do Supabase e chave da API (caso necessário).
-4. Execute o pipeline ETL:
-    
+
+4. **Inicie o dashboard Streamlit:**
+
     ```bash
-    python pipeline.py
-    
+    docker run -p 8501:8501 --env-file .env pipeline-bacen streamlit run dashboard.py
     ```
-    
-5. Inicie o dashboard:
-    
-    ```bash
-    streamlit run dashboard.py
-    
-    ```
-    
 
 ---
 
@@ -97,4 +86,4 @@ A solução automatiza o processo de obtenção de cotações cambiais e torna o
 
 ## 🤖 Sobre o Agente de IA (Agno)
 
-Agno é um agente conversacional inteligente integrado ao pipeline, capaz de interpretar os dados armazenados e gerar insights automaticamente com base em consultas em linguagem natural. Ele utiliza a infraestrutura de processamento de linguagem da Groq, proporcionando respostas rápidas e precisas.
+Agno é um agente conversacional inteligente integrado ao pipeline, capaz de interpretar os dados armazenados e gerar insights automaticamente com base em consultas em linguagem natural. Ele utiliza a infraestrutura de processamento de linguagem da Groq, proporcionando respostas
