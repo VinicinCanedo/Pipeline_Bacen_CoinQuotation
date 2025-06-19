@@ -1,7 +1,7 @@
 import requests
 
 def extrair():
-    url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='EUR'&@dataInicial='01-01-2025'&@dataFinalCotacao='06-30-2025'&$orderby=dataHoraCotacao%20desc&$format=json"
+    url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='EUR'&@dataInicial='06-01-2025'&@dataFinalCotacao='07-31-2025'&$orderby=dataHoraCotacao%20desc&$format=json"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()

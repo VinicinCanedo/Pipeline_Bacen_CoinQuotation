@@ -1,25 +1,20 @@
 FROM python:3.11-slim
 
-# Instala dependências do sistema
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Instala o Poetry
+# Atualiza o pip e instala o Poetry
+RUN pip install --upgrade pip
 RUN pip install poetry
 
-# Copia arquivos de dependências
-COPY pyproject.toml poetry.lock ./
+# Copia arquivos de dependências E README.md ANTES do poetry install
+COPY pyproject.toml poetry.lock README.md ./
 
-# Instala as dependências no ambiente global do container
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+# Instala as dependências no ambiente global do container, sem instalar o projeto atual
+RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root
 
 # Copia o restante do código do projeto
 COPY . .
 
-# Define variável de ambiente para o Poetry não pedir input
-ENV POETRY_NO_INTERACTION=1
-
-# Comando padrão (pode ser sobrescrito na execução)
-CMD ["python", "pipeline.py"]
+CMD ["python", "Pipeline/consumeAPI.py"]

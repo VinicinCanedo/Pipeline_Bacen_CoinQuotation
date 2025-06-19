@@ -1,5 +1,9 @@
 # 💱 Projeto de Pipeline de Dados - Cotações de Moedas (BACEN)
 
+**Objetivo principal:**  
+Executar um pipeline ETL que coleta, transforma e disponibiliza dados para análise da **comparação do Euro (EUR) em relação ao Dólar Comercial (USD)**, apresentando suas cotações diárias, taxas de câmbio e o status dos boletins diários.  
+Os dados abrangem os meses de **junho e julho de 2025**.
+
 Este projeto implementa um pipeline de dados completo que coleta, transforma, armazena e apresenta visualmente as **cotações diárias de moedas estrangeiras** por meio da API pública do Banco Central do Brasil (BACEN). Além disso, conta com um agente de IA que responde perguntas sobre os dados, ampliando a análise exploratória.
 
 ## 🧠 Visão Geral
