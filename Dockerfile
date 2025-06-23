@@ -17,4 +17,4 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 # Copia o restante do código do projeto
 COPY . .
 
-CMD ["python", "Pipeline/consumeAPI.py"]
+CMD ["python", "Pipeline/main.py"]

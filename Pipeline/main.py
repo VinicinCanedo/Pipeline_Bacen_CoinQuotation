@@ -26,12 +26,12 @@ def transformar_dados(dados_json):
     dados_transformados = []
     for registro in dados_json["value"]:
         dados_transformados.append({
-            "paridade_compra": registro.get("paridadeCompra"),
-            "paridade_venda": registro.get("paridadeVenda"),
-            "cotacao_compra": registro.get("cotacaoCompra"),
-            "cotacao_venda": registro.get("cotacaoVenda"),
-            "data_hora_cotacao": registro.get("dataHoraCotacao"),
-            "tipo_boletim": registro.get("tipoBoletim")
+            "paridadeCompra": registro.get("paridadeCompra"),
+            "paridadeVenda": registro.get("paridadeVenda"),
+            "cotacaoCompra": registro.get("cotacaoCompra"),
+            "cotacaoVenda": registro.get("cotacaoVenda"),
+            "dataHoraCotacao": registro.get("dataHoraCotacao"),
+            "tipoBoletim": registro.get("tipoBoletim")
         })
     print("Dados transformados com sucesso!")
     return dados_transformados
@@ -45,7 +45,7 @@ def carregar_dados_supabase(supabase_client: Client, dados: list):
     print(f"Carregando {len(dados)} registros no Supabase...")
     try:
         # O método insert pode receber uma lista de dicionários diretamente
-        response = supabase_client.from_("DollarQuotation").insert(dados).execute()
+        response = supabase_client.from_("DollarQuotation").upsert(dados).execute()
         
         # Verifica se houve erro na resposta da API
         if hasattr(response, 'error') and response.error:

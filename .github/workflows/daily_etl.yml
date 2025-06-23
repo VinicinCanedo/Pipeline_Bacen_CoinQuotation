@@ -1,0 +1,29 @@
+# filepath: .github/workflows/daily_etl.yml
+name: Daily ETL Pipeline
+
+on:
+  schedule:
+    # Executa todos os dias às 15:00 UTC.
+    # (Ajuste o horário se precisar de um fuso específico)
+    - cron: '0 15 * * *'
+  workflow_dispatch: # Permite rodar manualmente pela interface do GitHub
+
+jobs:
+  run-etl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: docker build -t pipeline-bacen .
+
+      - name: Run ETL container
+        run: |
+          docker run \
+          --env SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+          --env SUPABASE_KEY=${{ secrets.SUPABASE_KEY }} \
+          pipeline-bacen
