@@ -5,7 +5,7 @@ on:
   schedule:
     # Executa todos os dias às 15:00 UTC.
     # (Ajuste o horário se precisar de um fuso específico)
-    - cron: '0 15 * * *'
+    - cron: '0 13-17 * 6 1-5'
   workflow_dispatch: # Permite rodar manualmente pela interface do GitHub
 
 jobs:

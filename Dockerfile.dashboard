@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+# Define o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copia o arquivo de dependências para o container
+COPY ./Dashboards/requirements.txt .
+
+# Instala as dependências listadas no requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia a pasta com os segredos para o local que o Streamlit espera
+COPY ./.streamlit /app/.streamlit
+
+# Copia todos os arquivos da pasta Dashboards (incluindo o .py e o .csv) para o container
+COPY ./Dashboards/ .
+
+# Expõe a porta padrão do Streamlit (8501)
+EXPOSE 8501
+
+# Define o comando para iniciar a aplicação Streamlit quando o container for executado
+CMD ["streamlit", "run", "quotationDashboard.py"]
