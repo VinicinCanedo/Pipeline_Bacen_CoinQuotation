@@ -50,7 +50,7 @@ st.title("💱 Dashboard de Cotações USD/EUR - BACEN")
 st.markdown("Visualize e explore os dados de câmbio entre Euro e Dólar")
 
 # Filtro de período
-periodo = st.slider("Selecione o período (meses)", 1, 2)
+periodo = st.slider("Selecione o período (meses)", 1, 2, 3, 4)
 data_limite = datetime.now().date() - timedelta(days=30 * periodo)
 df_filtrado = df[df['data'] >= data_limite]
 
