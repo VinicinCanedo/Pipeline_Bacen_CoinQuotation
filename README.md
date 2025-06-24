@@ -144,3 +144,63 @@ docker run -p 8501:8501 dashboard-bacen
 
 4.  **Visualização via Streamlit**
     O dashboard se conecta diretamente ao Supabase, garantindo que os dados exibidos estejam sempre atualizados. Ele oferece gráficos de linha, barras e médias móveis, com filtros interativos.
+
+---
+
+## 🚀 Execução Automática com GitHub Actions
+
+Você pode agendar a execução diária do pipeline ETL de forma totalmente automática usando o GitHub Actions. Siga o passo a passo abaixo:
+
+### 1. Crie o workflow do GitHub Actions
+
+- No seu repositório, crie a pasta `.github/workflows` (caso ainda não exista).
+- Dentro dela, crie um arquivo chamado `pipeline-etl.yml` com o seguinte conteúdo:
+
+```yaml
+name: Pipeline ETL Bacen
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Executa todos os dias às 8h UTC
+  workflow_dispatch:      # Permite execução manual pelo GitHub
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Configurar variáveis de ambiente
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> $GITHUB_ENV
+
+      - name: Executar pipeline ETL
+        run: |
+          poetry run python Pipeline/main.py
+```
+
+### 2. Configure os segredos do repositório
+
+- No GitHub, acesse seu repositório > **Settings** > **Secrets and variables** > **Actions** > **New repository secret**.
+- Adicione os segredos:
+  - `SUPABASE_URL` (URL do seu projeto Supabase)
+  - `SUPABASE_KEY` (chave service_role do Supabase)
+
+### 3. Pronto!
+
+- O pipeline será executado automaticamente todos os dias no horário agendado.
+- Você também pode rodar manualmente em **Actions** > **Pipeline ETL Bacen** > **Run workflow**.
+
+---
