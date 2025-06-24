@@ -268,4 +268,4 @@ if __name__ == "__main__":
     1. **Setup**: Carrega as credenciais do arquivo .env e cria o cliente de conexão com o Supabase.
     2. **Orquestração**: Chama as funções na sequência correta: `obter_data_inicio_extracao` -> `extrair_dados_bacen` -> `transformar_dados` -> `carregar_dados_supabase`.
     3. **Validações**: Entre as etapas, há verificações (`if not dados_brutos...`) para garantir que o pipeline pare de forma limpa se, por exemplo, a API não retornar dados novos, evitando processamento desnecessário.
-- **`if __name__ == "__main__":`**: Esta é uma construção padrão em Python. Ela garante que a função `main()` seja executada apenas quando o script é rodado diretamente (ex: `python Pipeline/main.py`), e não quando ele é importado como um módulo por outro script.
+- **`if __name__ == "__main__":`**: Esta é uma construção padrão em Python. Ela garante que a função `main()` seja executada apenas quando o script é rodado diretamente, e não quando ele é importado como um módulo por outro script.
