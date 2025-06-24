@@ -1,9 +1,9 @@
 # 💱 Projeto de Pipeline de Dados - Cotações de Moedas (BACEN)
 
 **Objetivo principal:**  
-Executar um pipeline ETL que coleta, transforma e disponibiliza dados para análise da **comparação do Euro (EUR) em relação ao Dólar Comercial (USD)**, apresentando suas cotações diárias, taxas de câmbio e o status dos boletins diários.
+Executar um pipeline ETL que coleta, transforma e disponibiliza dados para análise da **cotação do Dólar (USD) em relação ao Real (BRL)**, apresentando suas cotações diárias, taxas de câmbio e o status dos boletins diários.
 
-Este projeto implementa um pipeline de dados completo que coleta, transforma, armazena e apresenta visualmente as **cotações diárias de moedas estrangeiras** por meio da API pública do Banco Central do Brasil (BACEN).
+Este projeto implementa um pipeline de dados completo que coleta, transforma, armazena e apresenta visualmente as **cotações diárias do Dólar (USD)** por meio da API pública do Banco Central do Brasil (BACEN).
 
 ## 🧠 Visão Geral
 
@@ -44,6 +44,7 @@ Você precisará de uma conta gratuita no [Supabase](https://supabase.com/).
 - No menu lateral esquerdo, vá para **SQL Editor**.
 - Clique em **New query**.
 - Copie e cole o script SQL abaixo e clique em **RUN**. Isso criará a tabela `DollarQuotation` com a estrutura correta.
+
 
 ```sql
 CREATE TABLE "DollarQuotation" (

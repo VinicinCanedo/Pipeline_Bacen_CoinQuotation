@@ -25,10 +25,10 @@ def obter_data_mais_recente(supabase_client: Client) -> str:
         else:
             # Caso a tabela esteja vazia, define uma data de início padrão
             print("Nenhum registro encontrado. Usando data de início padrão: 01-01-2024.")
-            return "01-01-2024"
+            return "06-01-2025"
     except Exception as e:
         print(f"Erro ao buscar data mais recente: {e}. Usando data de início padrão.")
-        return "01-01-2024"
+        return "06-01-2025"
 
 def extrair_dados_bacen(data_inicial: str):
     """Extrai os dados da API do BACEN a partir de uma data inicial até a data atual."""
@@ -37,7 +37,7 @@ def extrair_dados_bacen(data_inicial: str):
     data_final = datetime.now().strftime('%m-%d-%Y')
     
     # Monta a URL da API dinamicamente com as datas
-    url = f"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='EUR'&@dataInicial='{data_inicial}'&@dataFinalCotacao='{data_final}'&$orderby=dataHoraCotacao%20desc&$format=json"
+    url = f"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='USD'&@dataInicial='{data_inicial}'&@dataFinalCotacao='{data_final}'&$orderby=dataHoraCotacao%20desc&$format=json"
     
     try:
         response = requests.get(url)
