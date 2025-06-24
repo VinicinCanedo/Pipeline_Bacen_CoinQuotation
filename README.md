@@ -82,4 +82,64 @@ SUPABASE_KEY="SUA_CHAVE_SERVICE_ROLE_AQUI"
 O dashboard Streamlit usa um arquivo de segredos para se conectar de forma segura.
 
 - Na raiz do seu projeto, crie uma pasta chamada `.streamlit`.
-- Dentro
+- Dentro da pasta `.streamlit`, crie um arquivo chamado `secrets.toml`.
+- Adicione as mesmas credenciais do Supabase a este arquivo:
+
+```toml
+# filepath: .streamlit/secrets.toml
+SUPABASE_URL="SUA_URL_DO_SUPABASE_AQUI"
+SUPABASE_KEY="SUA_CHAVE_SERVICE_ROLE_AQUI"
+```
+**Importante:** Certifique-se de que este arquivo está salvo com a codificação **UTF-8**. No VS Code, você pode verificar e alterar a codificação na barra de status inferior direita.
+
+---
+
+## 🐳 Como Executar com Docker
+
+Com o ambiente configurado, você pode construir e executar as aplicações com os seguintes comandos.
+
+**1. Construa a imagem do Pipeline ETL:**
+Este comando usa o `Dockerfile` principal para criar a imagem que executará o script de extração.
+
+```bash
+docker build -f Dockerfile -t pipeline-bacen .
+```
+
+**2. Execute o Pipeline ETL:**
+Este comando executa o container, injetando as credenciais do seu arquivo `.env`. O pipeline buscará os dados e os salvará no seu banco Supabase.
+
+```bash
+docker run --env-file .env pipeline-bacen
+```
+
+**3. Construa a imagem do Dashboard:**
+Este comando usa o `Dockerfile.dashboard` para criar a imagem que servirá a aplicação Streamlit.
+
+```bash
+docker build -f Dockerfile.dashboard -t dashboard-bacen .
+```
+
+**4. Inicie o Dashboard Streamlit:**
+Este comando executa o container do dashboard e mapeia a porta `8501` para que você possa acessá-lo no seu navegador.
+
+```bash
+docker run -p 8501:8501 dashboard-bacen
+```
+
+- Após executar, acesse **`http://localhost:8501`** no seu navegador para ver o dashboard.
+
+---
+
+## 🔁 Etapas da Pipeline
+
+1.  **Extração de Dados**
+    O pipeline consulta o Supabase para obter a data do último registro. Em seguida, busca na API do BACEN apenas os dados a partir dessa data até o dia atual, otimizando a coleta.
+
+2.  **Transformação de Dados**
+    Os dados brutos em JSON são processados com Python: os tipos de dados são corrigidos, e duplicatas na mesma carga são removidas para garantir a integridade.
+
+3.  **Carga em Supabase**
+    Antes de inserir, o pipeline verifica novamente quais registros já existem no banco para evitar erros de duplicidade. Apenas os dados 100% novos são carregados na tabela `DollarQuotation`.
+
+4.  **Visualização via Streamlit**
+    O dashboard se conecta diretamente ao Supabase, garantindo que os dados exibidos estejam sempre atualizados. Ele oferece gráficos de linha, barras e médias móveis, com filtros interativos.
