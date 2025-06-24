@@ -2,3 +2,7 @@ streamlit
 pandas
 plotly
 supabase
+agno
+openai
+groq
+duckduckgo-search

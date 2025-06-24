@@ -1,8 +1,14 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client, Client
+from agno.agent import Agent
+from agno.models.groq import Groq
+from agno.tools.duckduckgo import DuckDuckGoTools
 import plotly.express as px
 from datetime import datetime, timedelta
+
+
+AGNO_KEY=st.secrets["AGNO_KEY"]
 
 # --- 1. Carregar dados do Supabase
 @st.cache_data # O cache é ótimo para não buscar os dados a cada interação
@@ -46,7 +52,7 @@ if df.empty:
     st.stop()
 
 # --- 2. Layout do Dashboard
-st.title("💱 Dashboard de Cotações USD/EUR - BACEN")
+st.title("💱 Dashboard de Cotações USD - BACEN")
 st.markdown("Visualize e explore os dados de câmbio entre Euro e Dólar")
 
 # Filtro de período
@@ -77,3 +83,38 @@ fig3 = px.line(df_filtrado, x='data', y=['cotacaoVenda', 'MM7', 'MM30'],
 st.plotly_chart(fig3, use_container_width=True)
 
 
+# --- 6. Integração com Agente de IA
+
+# ...existing code...
+agent = Agent(
+    model=Groq(
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        api_key=AGNO_KEY
+    ),
+    name="Agno",
+    description="Você é um Analista de Câmbio responsável por acompanhar e avaliar diariamente as cotações de moedas estrangeiras com base em relatórios, contratos e regulamentações do Banco Central.",
+    tools=[DuckDuckGoTools()]
+)
+# ...código anterior...
+
+st.subheader("🤖 Pergunte ao Agente de IA (Agno)")
+pergunta = st.text_input("Digite sua pergunta sobre as cotações:")
+
+if pergunta:
+    # 1. Seleciona um resumo ou fatia dos dados relevantes para o contexto
+    # Exemplo: últimos 10 registros filtrados
+    contexto_df = df_filtrado.tail(10)
+    # 2. Converte para texto (pode ser CSV, tabela, ou resumo customizado)
+    contexto_texto = contexto_df.to_string(index=False)
+
+    # 3. Monta o prompt contextualizado
+    prompt = (
+        f"Considere os seguintes dados de cotações do dólar extraídos do Banco Central do Brasil:\n"
+        f"{contexto_texto}\n\n"
+        f"Pergunta do usuário: {pergunta}\n"
+        f"Responda de forma clara e baseada nos dados acima."
+    )
+
+    with st.spinner("Agno está pensando..."):
+        resposta = agent.run(prompt)
+    st.success(resposta.content if hasattr(resposta, "content") else resposta)
