@@ -2,11 +2,43 @@ import os
 import requests
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from datetime import datetime, timedelta
 
-def extrair_dados_bacen():
-    """Extrai os dados da API do BACEN para o período definido."""
-    print("Iniciando extração de dados da API do BACEN...")
-    url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='EUR'&@dataInicial='06-01-2025'&@dataFinalCotacao='07-31-2025'&$orderby=dataHoraCotacao%20desc&$format=json"
+def obter_data_mais_recente(supabase_client: Client) -> str:
+    """Busca a data mais recente dos registros no Supabase para definir o início da próxima extração."""
+    print("Buscando a data mais recente na base de dados...")
+    try:
+        # Ordena por dataHoraCotacao em ordem decrescente e pega o primeiro registro
+        response = supabase_client.from_("DollarQuotation").select("dataHoraCotacao").order("dataHoraCotacao", desc=True).limit(1).execute()
+
+        if response.data:
+            # Extrai a data do registro mais recente
+            data_recente_str = response.data[0]['dataHoraCotacao']
+            # Converte a string para um objeto datetime
+            data_recente = datetime.fromisoformat(data_recente_str)
+            # Adiciona um dia para evitar buscar o último dia novamente
+            proxima_data = data_recente + timedelta(days=1)
+            # Formata a data para o formato exigido pela API do BACEN (MM-DD-YYYY)
+            data_formatada = proxima_data.strftime('%m-%d-%Y')
+            print(f"Última data encontrada: {data_recente_str}. A extração continuará a partir de {data_formatada}.")
+            return data_formatada
+        else:
+            # Caso a tabela esteja vazia, define uma data de início padrão
+            print("Nenhum registro encontrado. Usando data de início padrão: 01-01-2024.")
+            return "01-01-2024"
+    except Exception as e:
+        print(f"Erro ao buscar data mais recente: {e}. Usando data de início padrão.")
+        return "01-01-2024"
+
+def extrair_dados_bacen(data_inicial: str):
+    """Extrai os dados da API do BACEN a partir de uma data inicial até a data atual."""
+    print(f"Iniciando extração de dados da API do BACEN a partir de {data_inicial}...")
+    # Define a data final como a data de hoje
+    data_final = datetime.now().strftime('%m-%d-%Y')
+    
+    # Monta a URL da API dinamicamente com as datas
+    url = f"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='EUR'&@dataInicial='{data_inicial}'&@dataFinalCotacao='{data_final}'&$orderby=dataHoraCotacao%20desc&$format=json"
+    
     try:
         response = requests.get(url)
         response.raise_for_status()  # Lança um erro para status HTTP 4xx/5xx
@@ -17,19 +49,17 @@ def extrair_dados_bacen():
         return None
 
 def transformar_dados(dados_json):
-    """Transforma os dados brutos, removendo duplicatas antes de enviar ao banco."""
-    if not dados_json or "value" not in dados_json:
+    """Transforma os dados brutos, removendo duplicatas da mesma carga."""
+    if not dados_json or "value" not in dados_json or not dados_json["value"]:
         print("Nenhum dado para transformar.")
         return []
 
     print(f"Processando {len(dados_json['value'])} registros brutos...")
     
-    # Usa um dicionário para garantir que cada dataHoraCotacao seja única.
-    # Se uma chave duplicada aparecer, ela simplesmente substitui a anterior.
     registros_unicos = {}
     for registro in dados_json["value"]:
         chave_unica = registro.get("dataHoraCotacao")
-        if chave_unica:  # Garante que o registro tem a chave
+        if chave_unica:
             registros_unicos[chave_unica] = {
                 "paridadeCompra": registro.get("paridadeCompra"),
                 "paridadeVenda": registro.get("paridadeVenda"),
@@ -39,52 +69,45 @@ def transformar_dados(dados_json):
                 "tipoBoletim": registro.get("tipoBoletim")
             }
 
-    # Converte os valores do dicionário de volta para uma lista.
     dados_transformados = list(registros_unicos.values())
-    
     print(f"Dados transformados com sucesso! {len(dados_transformados)} registros únicos encontrados.")
     return dados_transformados
 
 def carregar_dados_supabase(supabase_client: Client, dados: list):
-    """Verifica quais dados já existem e insere apenas os novos."""
+    """Verifica quais dados já existem no banco e insere apenas os novos."""
     if not dados:
         print("Nenhum dado para carregar.")
         return
 
     try:
-        # 1. Extrai as chaves (dataHoraCotacao) dos dados que vieram da API
-        chaves_para_verificar = [registro['dataHoraCotacao'] for registro in dados]
-
-        # 2. Consulta o banco para ver quais dessas chaves JÁ EXISTEM na tabela
-        response = supabase_client.from_("DollarQuotation").select("dataHoraCotacao").in_("dataHoraCotacao", chaves_para_verificar).execute()
+        chaves_api = {registro['dataHoraCotacao'] for registro in dados}
+        
+        # Consulta o banco para ver quais dessas chaves JÁ EXISTEM na tabela
+        response = supabase_client.from_("DollarQuotation").select("dataHoraCotacao").in_("dataHoraCotacao", list(chaves_api)).execute()
 
         if hasattr(response, 'error') and response.error:
-            print(f"Erro ao verificar dados existentes: {response.error}")
+            print(f"Erro ao verificar dados existentes no Supabase: {response.error}")
             return
 
-        # 3. Cria um conjunto com as chaves que já existem para uma busca rápida
         chaves_existentes = {registro['dataHoraCotacao'] for registro in response.data}
-
-        # 4. Filtra a lista original, mantendo apenas os registros que NÃO estão no banco
+        
+        # Filtra a lista original, mantendo apenas os registros que NÃO estão no banco
         dados_novos = [registro for registro in dados if registro['dataHoraCotacao'] not in chaves_existentes]
 
-        # 5. Verifica o resultado do filtro
         if not dados_novos:
-            # Se a lista de dados novos estiver vazia, todos os registros já existem
-            print("Os dados já constam na Base de Dados.")
+            print("Todos os dados extraídos já constam na base. Nenhuma inserção necessária.")
             return
         
-        # 6. Se houver dados novos, realiza a inserção deles
         print(f"Carregando {len(dados_novos)} novos registros no Supabase...")
         insert_response = supabase_client.from_("DollarQuotation").insert(dados_novos).execute()
 
         if hasattr(insert_response, 'error') and insert_response.error:
-            print(f"Erro ao carregar novos dados: {insert_response.error}")
+            print(f"Erro ao carregar novos dados no Supabase: {insert_response.error}")
         else:
-            print("Novos dados carregados com sucesso no Supabase!")
+            print("Novos dados carregados com sucesso!")
 
     except Exception as e:
-        print(f"Falha na operação com o Supabase: {e}")
+        print(f"Falha na operação de carga com o Supabase: {e}")
 
 def main():
     """Função principal que orquestra o pipeline ETL."""
@@ -107,17 +130,23 @@ def main():
         print(f"Falha ao criar cliente Supabase: {e}")
         return
 
-    # 2. Extração
-    dados_brutos = extrair_dados_bacen()
-    if not dados_brutos:
+    # 2. Obtenção da data de início para a extração
+    data_inicio_extracao = obter_data_mais_recente(supabase)
+
+    # 3. Extração
+    dados_brutos = extrair_dados_bacen(data_inicio_extracao)
+    # Verifica se a extração retornou dados e se a lista 'value' não está vazia
+    if not dados_brutos or not dados_brutos.get("value"):
+        print("Nenhum dado novo foi extraído da API do BACEN. Finalizando pipeline.")
         return
 
-    # 3. Transformação
+    # 4. Transformação
     dados_para_inserir = transformar_dados(dados_brutos)
     if not dados_para_inserir:
+        print("Nenhum dado novo para inserir após a transformação. Finalizando pipeline.")
         return
 
-    # 4. Carga
+    # 5. Carga
     carregar_dados_supabase(supabase, dados_para_inserir)
     
     print("--- Pipeline ETL finalizado ---")
