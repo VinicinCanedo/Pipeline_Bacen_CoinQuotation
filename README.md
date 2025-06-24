@@ -1,14 +1,13 @@
 # 💱 Projeto de Pipeline de Dados - Cotações de Moedas (BACEN)
 
 **Objetivo principal:**  
-Executar um pipeline ETL que coleta, transforma e disponibiliza dados para análise da **comparação do Euro (EUR) em relação ao Dólar Comercial (USD)**, apresentando suas cotações diárias, taxas de câmbio e o status dos boletins diários.  
-Os dados abrangem os meses de **junho e julho de 2025**.
+Executar um pipeline ETL que coleta, transforma e disponibiliza dados para análise da **comparação do Euro (EUR) em relação ao Dólar Comercial (USD)**, apresentando suas cotações diárias, taxas de câmbio e o status dos boletins diários.
 
-Este projeto implementa um pipeline de dados completo que coleta, transforma, armazena e apresenta visualmente as **cotações diárias de moedas estrangeiras** por meio da API pública do Banco Central do Brasil (BACEN). Além disso, conta com um agente de IA que responde perguntas sobre os dados, ampliando a análise exploratória.
+Este projeto implementa um pipeline de dados completo que coleta, transforma, armazena e apresenta visualmente as **cotações diárias de moedas estrangeiras** por meio da API pública do Banco Central do Brasil (BACEN).
 
 ## 🧠 Visão Geral
 
-A solução automatiza o processo de obtenção de cotações cambiais e torna os dados acessíveis de forma visual e interativa via dashboard. Este projeto pode ser expandido para análises financeiras, previsão de mercado e integrações com relatórios econômicos.
+A solução automatiza o processo de obtenção de cotações cambiais e torna os dados acessíveis de forma visual e interativa via dashboard. O pipeline é orquestrado para rodar diariamente de forma automática, buscando apenas os dados mais recentes para otimizar o processo.
 
 ---
 
@@ -17,77 +16,70 @@ A solução automatiza o processo de obtenção de cotações cambiais e torna o
 | Etapa | Ferramenta | Descrição |
 | --- | --- | --- |
 | Dados Externos | API BACEN | Fonte de dados de câmbio em tempo real |
-| Extract | `requests` (Python) | Coleta os dados da API REST do BACEN |
+| Linguagem | `Python` | Linguagem principal para o desenvolvimento do pipeline e dashboard |
+| Dependências | `Poetry` | Gerenciamento de dependências do pipeline ETL |
+| Extract | `requests` | Coleta os dados da API REST do BACEN |
 | Transform | `Python` | Normalização e tratamento dos dados coletados |
 | Load | `Supabase` | Banco de dados relacional (PostgreSQL) na nuvem |
 | Dashboard | `Streamlit` | Visualização e análise interativa em tempo real |
-| AI Agent | `Agno (Groq)` | Agente de IA que responde perguntas sobre os dados |
+| Orquestração | `GitHub Actions` | Automação e agendamento da execução diária do pipeline |
+| Containerização | `Docker` | Empacotamento e execução isolada do pipeline e do dashboard |
 
 ---
 
-## 🔁 Etapas da Pipeline
+## ⚙️ Configuração do Ambiente
 
-1. **Extração de Dados**
-    
-    Utiliza a biblioteca `requests` para consultar a API do BACEN diariamente e obter as cotações de moedas como USD, EUR, ARS, entre outras.
-    
-2. **Transformação de Dados**
-    
-    Os dados brutos são tratados com Python, convertidos para tipos apropriados (datas, floats), removidos dados inconsistentes e padronizados os nomes das moedas.
-    
-3. **Carga em Supabase**
-    
-    Após o tratamento, os dados são inseridos em tabelas no Supabase utilizando a API REST ou cliente Python. Há controle de duplicidade por data e código da moeda.
-    
-4. **Visualização via Streamlit**
-    
-    Criação de gráficos de linha, tabelas e filtros por moeda e intervalo de datas. Interface simples e responsiva hospedada localmente ou em nuvem.
-    
-5. **Interação com Agente de IA (Agno/Groq)**
-    
-    O agente Agno, executado na infraestrutura Groq, permite ao usuário realizar perguntas em linguagem natural como:
-    
-    > “Qual foi a média do dólar nos últimos 30 dias?”
-    > 
-    > 
-    > “Qual moeda teve a maior variação este mês?”
-    > 
+Antes de executar o projeto, siga estes passos para configurar o banco de dados e as credenciais.
 
----
+### 1. Configurando o Supabase (Banco de Dados)
 
-## 🐳 Como Executar com Docker
+Você precisará de uma conta gratuita no [Supabase](https://supabase.com/).
 
-1. **Construa a imagem Docker:**
+**Passo 1: Crie um novo projeto**
+- Após fazer login, clique em "New project".
+- Escolha um nome para o projeto e gere uma senha segura para o banco de dados. Guarde essa senha.
+- Selecione a região mais próxima de você e clique em "Create new project".
 
-    ```bash
-    docker build -t pipeline-bacen .
-    ```
+**Passo 2: Crie a tabela de cotações**
+- No menu lateral esquerdo, vá para **SQL Editor**.
+- Clique em **New query**.
+- Copie e cole o script SQL abaixo e clique em **RUN**. Isso criará a tabela `DollarQuotation` com a estrutura correta.
 
-2. **Crie um arquivo `.env` com suas credenciais do Supabase e chave da API (caso necessário) na raiz do projeto.**
+```sql
+CREATE TABLE "DollarQuotation" (
+    "paridadeCompra" float8,
+    "paridadeVenda" float8,
+    "cotacaoCompra" float8,
+    "cotacaoVenda" float8,
+    "dataHoraCotacao" timestamp with time zone NOT NULL,
+    "tipoBoletim" text,
+    CONSTRAINT "DollarQuotation_pkey" PRIMARY KEY ("dataHoraCotacao")
+);
+```
 
-3. **Execute o pipeline ETL:**
+**Passo 3: Obtenha a URL e a Chave de API**
+- No menu lateral esquerdo, vá para **Project Settings** (ícone de engrenagem).
+- Selecione **API**.
+- Você encontrará as informações que precisa:
+    - Em **Project URL**, copie a URL.
+    - Em **Project API Keys**, copie a chave `service_role`. **Atenção:** esta chave tem privilégios de administrador. Mantenha-a segura e não a exponha publicamente.
 
-    ```bash
-    docker run --env-file .env pipeline-bacen
-    ```
+### 2. Configurando o Pipeline (Arquivo `.env`)
 
-4. **Inicie o dashboard Streamlit:**
+O pipeline ETL usa um arquivo `.env` para se conectar ao Supabase.
 
-    ```bash
-    docker run -p 8501:8501 --env-file .env pipeline-bacen streamlit run dashboard.py
-    ```
+- Na raiz do seu projeto, crie um arquivo chamado `.env`.
+- Adicione a URL e a chave que você copiou no passo anterior:
 
----
+```properties
+# filepath: .env
+SUPABASE_URL="SUA_URL_DO_SUPABASE_AQUI"
+SUPABASE_KEY="SUA_CHAVE_SERVICE_ROLE_AQUI"
+```
 
-## 📊 Exemplos de Visualizações
+### 3. Configurando o Dashboard (`secrets.toml`)
 
-- Tendência do dólar nos últimos 6 meses
-- Comparativo de variações cambiais
-- Médias móveis para moedas específicas
-- Análises interativas com ajuda da IA
+O dashboard Streamlit usa um arquivo de segredos para se conectar de forma segura.
 
----
-
-## 🤖 Sobre o Agente de IA (Agno)
-
-Agno é um agente conversacional inteligente integrado ao pipeline, capaz de interpretar os dados armazenados e gerar insights automaticamente com base em consultas em linguagem natural. Ele utiliza a infraestrutura de processamento de linguagem da Groq, proporcionando respostas
+- Na raiz do seu projeto, crie uma pasta chamada `.streamlit`.
+- Dentro
